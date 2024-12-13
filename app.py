@@ -1,8 +1,7 @@
 import os
-import pytesseract
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
-from PIL import Image
+from pix2text import Pix2Text
 
 # Flask App
 app = Flask(__name__)
@@ -11,9 +10,6 @@ app = Flask(__name__)
 UPLOAD_FOLDER = os.path.abspath('uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Path to Tesseract-OCR
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Create Upload Folder if it doesn't exist
 if not os.path.exists(UPLOAD_FOLDER):
@@ -34,37 +30,35 @@ def upload_file():
     if 'file' not in request.files:
         return redirect(request.url)
     file = request.files['file']
+    if file.filename == '':
+        return redirect(request.url)
+
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Debug: File Path
-        print(f"File saved at: {filepath}")
+        try:
+            # Sử dụng Pix2Text để nhận diện công thức
+            p2t = Pix2Text.from_config()
+            equations = p2t.recognize_formula(filepath)
 
-        # Open Image and Extract Text with Tesseract
-        image = Image.open(filepath)
-        config = r'--psm 6'  # Use "PSM 6" for a single block of text (adjustable)
-        text = pytesseract.image_to_string(image, config=config)
+            # Hiển thị kết quả trên giao diện
+            return render_template(
+                'result.html',
+                equations=equations,
+                image_path=filename
+            )
+        except Exception as e:
+            return render_template('error.html', error_message=str(e))
 
-        # Clean the OCR Output and Prepare LaTeX (Optional Processing)
-        latex_content = text  # If necessary, preprocess the text here
-
-        # Render the Result Page
-        return render_template(
-            'result.html',
-            text=text,
-            image_path=filename,
-            latex_content=latex_content
-        )
-
+    # Nếu file không hợp lệ
     return redirect(url_for('index'))
 
 # Route: Serve Uploaded Files
 @app.route('/uploads/<filename>', endpoint='uploads')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
 
 # Run the App
 if __name__ == '__main__':

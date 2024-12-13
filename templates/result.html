@@ -91,22 +91,26 @@
       </div>
     </nav>
     <div class="container-fluid p-5">
-      <h1>OCR Result</h1>
-      <h2>Extracted Text</h2>
-      <pre>{{ text }}</pre>
-
-      <h2>LaTeX Output</h2>
-      <div id="latex-content">$$ {{ latex_content | safe }} $$</div>
-
-      <h2>Uploaded Image</h2>
-      <img
-        src="{{ url_for('uploads', filename=image_path) }}"
-        alt="Uploaded Image"
-        style="height: auto; width: 400px"
-      />
-
-      <br />
-      <a href="/">Upload another image</a>
+      <div class="">
+        <h1>Ảnh tài lên:</h1>
+        <img
+          src="{{ url_for('uploads', filename=image_path) }}"
+          alt="Uploaded Image"
+          style="max-width: 500px"
+        />
+      </div>
+      <div class="">
+        <h2 class="mb-3">Kết quả Latex:</h2>
+        <div class="d-flex align-items-center">
+          <div class="bg-light bg-gradient p-5 mb-3 me-5" id="latex-text">
+            {{ equations }}
+          </div>
+          <div class="">
+            <button class="btn btn-primary" id="copy-button">Sao chép</button>
+          </div>
+        </div>
+        <a href="/">OCR một ảnh khác</a>
+      </div>
     </div>
   </body>
   <script
@@ -114,4 +118,23 @@
     integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
     crossorigin="anonymous"
   ></script>
+  <script>
+    // Lấy nút sao chép và phần tử chứa Latex
+    const copyButton = document.getElementById("copy-button");
+    const latexText = document.getElementById("latex-text");
+
+    // Thêm sự kiện cho nút sao chép
+    copyButton.addEventListener("click", function () {
+      // Tạo một phần tử textarea tạm thời để sao chép nội dung
+      const textarea = document.createElement("textarea");
+      textarea.value = latexText.innerText; // Lấy nội dung của div
+      document.body.appendChild(textarea);
+      textarea.select(); // Chọn toàn bộ nội dung
+      document.execCommand("copy"); // Sao chép nội dung vào clipboard
+      document.body.removeChild(textarea); // Xóa phần tử tạm thời
+
+      // Hiển thị thông báo khi sao chép thành công
+      alert("Đã sao chép Latex vào clipboard!");
+    });
+  </script>
 </html>
